@@ -1,0 +1,7 @@
+{
+  "features": {
+    "graphqltransformer": {
+      "secondaryKeyAsGSI": true
+    }
+  }
+}

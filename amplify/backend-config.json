@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "backend": {
+    "api": {
+      "myApi": {}
+    },
+    "function": {
+      "helloWorld": {}
+    }
+  }
+}
