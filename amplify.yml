@@ -13,9 +13,3 @@ applications:
         baseDirectory: dist
         files:
           - '**/*'
-    test:
-      phases:
-        preTest:
-          commands: []
-        test:
-          commands: []
