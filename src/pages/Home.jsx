@@ -226,6 +226,9 @@ export default function Home() {
   const [form, setForm] = useState(initialForm);
   const [photos, setPhotos] = useState({ techos: [], pisos: [], paredes: [], externas: [], otros: [] });
   const [streams, setStreams] = useState({});
+  const streamsRef = useRef({});
+  const [cameraFacingModes, setCameraFacingModes] = useState({});
+  const [switchableCameras, setSwitchableCameras] = useState({});
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [geoStatus, setGeoStatus] = useState('');
@@ -359,28 +362,11 @@ export default function Home() {
     }));
   };
 
-  const startCamera = async (kind) => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setStatus('El dispositivo no permite cámara en este navegador.');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-      const video = videoRefs[kind]?.current;
-      if (video) {
-        video.srcObject = stream;
-        await video.play();
-      }
-      setStreams((prev) => ({ ...prev, [kind]: stream }));
-    } catch (e) {
-      setStatus('No se pudo acceder a la cámara. Revisa permisos.');
-    }
-  };
-
   const stopCamera = (kind) => {
-    const stream = streams[kind];
+    const stream = streamsRef.current[kind];
     if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((track) => track.stop());
+      delete streamsRef.current[kind];
       setStreams((prev) => {
         const next = { ...prev };
         delete next[kind];
@@ -391,9 +377,49 @@ export default function Home() {
     if (video) video.srcObject = null;
   };
 
+  const startCamera = async (kind, requestedFacingMode = cameraFacingModes[kind] || 'environment') => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus('El dispositivo no permite cámara en este navegador.');
+      return;
+    }
+    stopCamera(kind);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: requestedFacingMode } },
+        audio: false,
+      });
+      const video = videoRefs[kind]?.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+      streamsRef.current[kind] = stream;
+      setStreams((prev) => ({ ...prev, [kind]: stream }));
+      setCameraFacingModes((prev) => ({ ...prev, [kind]: requestedFacingMode }));
+
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameraCount = devices.filter((device) => device.kind === 'videoinput').length;
+        setSwitchableCameras((prev) => ({ ...prev, [kind]: cameraCount > 1 }));
+      } catch {
+        setSwitchableCameras((prev) => ({ ...prev, [kind]: false }));
+      }
+      setStatus('');
+    } catch (e) {
+      stream?.getTracks().forEach((track) => track.stop());
+      setStatus('No se pudo acceder a la cámara. Revisa permisos.');
+    }
+  };
+
+  const switchCamera = async (kind) => {
+    const nextFacingMode = cameraFacingModes[kind] === 'user' ? 'environment' : 'user';
+    await startCamera(kind, nextFacingMode);
+  };
+
   const capturePhoto = (kind) => {
     const video = videoRefs[kind]?.current;
-    if (!video || !streams[kind]) {
+    if (!video || !streamsRef.current[kind]) {
       setStatus('Primero inicia la cámara para ' + kind);
       return;
     }
@@ -401,6 +427,10 @@ export default function Home() {
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     const ctx = canvas.getContext('2d');
+    if (cameraFacingModes[kind] === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     setPhotos((prev) => ({
@@ -411,9 +441,11 @@ export default function Home() {
 
   useEffect(() => {
     return () => {
-      Object.keys(streams).forEach(stopCamera);
+      Object.values(streamsRef.current).forEach((stream) => {
+        stream.getTracks().forEach((track) => track.stop());
+      });
+      streamsRef.current = {};
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1288,6 +1320,11 @@ export default function Home() {
                             <button type="button" className="camera-btn camera-btn-start" onClick={() => startCamera(kind)}>
                               Iniciar cámara
                             </button>
+                            {switchableCameras[kind] && streams[kind] && (
+                              <button type="button" className="camera-btn camera-btn-switch" onClick={() => switchCamera(kind)}>
+                                Cambiar cámara
+                              </button>
+                            )}
                             <button type="button" className="camera-btn camera-btn-shot" onClick={() => capturePhoto(kind)}>
                               Tomar foto
                             </button>
@@ -1298,7 +1335,15 @@ export default function Home() {
                           <Divider />
                           <div className="flex-1 grid grid-cols-1 gap-2">
                             <div className="relative border rounded-lg overflow-hidden bg-black min-h-[160px]">
-                              <video ref={videoRefs[kind]} className="w-full h-full object-cover" muted playsInline autoPlay />
+                              <video
+                                ref={videoRefs[kind]}
+                                className={`w-full h-full object-cover ${
+                                  cameraFacingModes[kind] === 'user' ? 'camera-video-front' : ''
+                                }`}
+                                muted
+                                playsInline
+                                autoPlay
+                              />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               {(photos[kind] || []).map((photo, idx) => (

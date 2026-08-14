@@ -133,6 +133,10 @@ button:focus-visible {
   background: #56955e;
   color: #fff;
 }
+.camera-btn-switch {
+  background: #2563eb;
+  color: #fff;
+}
 .camera-btn-shot {
   background: #2f6f3a;
   color: #fff;
@@ -140,6 +144,9 @@ button:focus-visible {
 .camera-btn-stop {
   background: #e11d48;
   color: #fff;
+}
+.camera-video-front {
+  transform: scaleX(-1);
 }
 
 .action-btn {
