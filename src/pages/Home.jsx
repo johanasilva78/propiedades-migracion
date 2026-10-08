@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import JSZip from 'jszip';
-import { Badge, Button, Card, Divider, Flex, Text, Textarea, TextInput, Title } from '@tremor/react';
+import { Badge, Button, Card, Divider, Text, Textarea, TextInput, Title } from '@tremor/react';
 import { usePing } from '../hooks/usePing';
-import { uploadFile, submitInspection } from '../services/apiClient';
+import { createInspection, listInspections, getInspection, saveInspection } from '../services/apiClient';
+import sectionFields from '../../database/section-fields.json';
 
 const initialForm = {
   nombreRiesgo: '',
@@ -58,9 +58,9 @@ const initialForm = {
   mtsPorPiso: '',
   aptosPorPiso: '',
   mtsConstruccion: '',
-  disenoAntisismico: false,
-  construccionUnica: false,
-  construccionSeparada: false,
+  disenoAntisismico: null,
+  construccionUnica: null,
+  construccionSeparada: null,
   predio: '',
   sindicato: '',
   colindanciaNorte: '',
@@ -71,8 +71,8 @@ const initialForm = {
   distanciaColindanciaEste: '',
   colindanciaOeste: '',
   distanciaColindanciaOeste: '',
-  colindanciasNoAgravan: false,
-  colindanciasAgravan: false,
+  colindanciasNoAgravan: null,
+  colindanciasAgravan: null,
   colindanciasObservaciones: '',
   calle: '',
   sector: '',
@@ -221,9 +221,33 @@ function sectionTitle(id, title) {
   return `${id}. ${title}`;
 }
 
+const emptyPhotos = () => ({ techos: [], pisos: [], paredes: [], externas: [], otros: [] });
+const restoreForm = (saved) => Object.fromEntries(Object.entries(initialForm).map(([key, fallback]) => {
+  const value = saved?.[key];
+  return [key, value == null ? fallback : Array.isArray(fallback) || typeof fallback === 'boolean' || fallback === null ? value : String(value)];
+}));
+
+function BooleanAnswer({ value, onChange, label }) {
+  return <label className="inline-flex items-center gap-2 text-slate-700">
+    {label}
+    <select className="border rounded p-2" value={value == null ? '' : String(value)}
+      onChange={(e) => onChange(e.target.value === '' ? null : e.target.value === 'true')}>
+      <option value="">Sin responder</option><option value="true">Sí</option><option value="false">No</option>
+    </select>
+  </label>;
+}
+
 export default function Home() {
   const { loading: pingLoading, result: pingResult, error: pingError, run: runPing } = usePing();
   const [form, setForm] = useState(initialForm);
+  const [operatorId, setOperatorId] = useState(() => localStorage.getItem('propiedades.operatorId') || 'operador-prueba');
+  const [inspection, setInspection] = useState(null);
+  const [resumeId, setResumeId] = useState(() => localStorage.getItem('propiedades.inspectionId') || '');
+  const [drafts, setDrafts] = useState([]);
+  const [nextOffset, setNextOffset] = useState(null);
+  const [draftsListed, setDraftsListed] = useState(false);
+  const [dirtySections, setDirtySections] = useState(new Set());
+  const [expandedSections, setExpandedSections] = useState(() => new Set());
   const [photos, setPhotos] = useState({ techos: [], pisos: [], paredes: [], externas: [], otros: [] });
   const [streams, setStreams] = useState({});
   const streamsRef = useRef({});
@@ -241,7 +265,18 @@ export default function Home() {
     otros: useRef(null),
   };
 
-  const updateField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
+  const markDirty = (sectionId) => setDirtySections((prev) => new Set([...prev, String(sectionId)]));
+  const toggleSection = (sectionId) => setExpandedSections((prev) => {
+    const next = new Set(prev);
+    if (next.has(sectionId)) next.delete(sectionId);
+    else next.add(sectionId);
+    return next;
+  });
+  const updateField = (name, value) => {
+    const section = Object.entries(sectionFields).find(([, config]) => name in config.fields)?.[0];
+    if (section) markDirty(section);
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
   const nivelesCount = useMemo(() => {
     const parsedNiveles = Number.parseInt(form.niveles, 10);
     if (Number.isFinite(parsedNiveles) && parsedNiveles > 0) return parsedNiveles;
@@ -261,12 +296,14 @@ export default function Home() {
       .join('\n')
       .trim();
 
-  const updateDescripcionNivel = (index, value) =>
+  const updateDescripcionNivel = (index, value) => {
+    markDirty('3');
     setForm((prev) => {
       const next = [...(prev.descripcionPorNiveles || [])];
       next[index] = value;
       return { ...prev, descripcionPorNiveles: next, descripcionPorNivel: buildDescripcionPorNivel(next) };
     });
+  };
 
   const fillLocationFields = (addressData, coords) => {
     const address = addressData?.address || {};
@@ -287,6 +324,7 @@ export default function Home() {
     const latString = lat !== '' && Number.isFinite(Number(lat)) ? Number(lat).toFixed(6) : String(lat || '');
     const lonString = lon !== '' && Number.isFinite(Number(lon)) ? Number(lon).toFixed(6) : String(lon || '');
 
+    markDirty('5');
     setForm((prev) => ({
       ...prev,
       calle: withFallback(prev.calle, calle),
@@ -352,10 +390,12 @@ export default function Home() {
     const mapped = await Promise.all(
       files.map(async (file) => ({ name: file.name, dataUrl: await readFileAsDataUrl(file) }))
     );
+    markDirty('14');
     setPhotos((prev) => ({ ...prev, [kind]: [...(prev[kind] || []), ...mapped] }));
   };
 
   const removePhoto = (kind, idx) => {
+    markDirty('14');
     setPhotos((prev) => ({
       ...prev,
       [kind]: prev[kind].filter((_, i) => i !== idx),
@@ -433,6 +473,7 @@ export default function Home() {
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    markDirty('14');
     setPhotos((prev) => ({
       ...prev,
       [kind]: [...prev[kind], { name: `${kind}-${Date.now()}.jpg`, dataUrl }],
@@ -474,143 +515,175 @@ export default function Home() {
     });
   }, [nivelesCount]);
 
-  const hasFotos = useMemo(
-    () => photos.techos.length || photos.pisos.length || photos.paredes.length || photos.externas.length || photos.otros.length,
-    [photos]
-  );
-
-  const buildPayload = (fileIds, zipId) => {
-    const stripEmpty = (obj) =>
-      Object.fromEntries(Object.entries(obj).filter(([, v]) => !(v === undefined || v === null || v === '')));
-
-    const payload = {
-      NOMBRE: form.propietario || form.nombreRiesgo,
-      EMAIL: form.email,
-      TELEFONO: form.telefono,
-      CELULAR: form.celular,
-      DIRECCION: form.ubicacionInspeccionada,
-      ZIP: form.zip,
-      NOMBRE_RIESGO: form.nombreRiesgo,
-      PROPIETARIO: form.propietario,
-      CEDULA: form.rnc,
-      TIPO_RIESGO: form.tipoRiesgo,
-      INSPECCIONADO: form.inspeccionadoPor,
-      EDAD_RIESGO: form.edadRiesgo,
-      FECHA_INSPECCION: form.fechaInspeccion,
-      FOTO_TECHO: JSON.stringify(fileIds.techos || []),
-      FOTO_PISO: JSON.stringify(fileIds.pisos || []),
-      FOTO_PARED: JSON.stringify(fileIds.paredes || []),
-      FOTO_EXTERNA: JSON.stringify(fileIds.externas || []),
-      FOTO_OTROS: JSON.stringify(fileIds.otros || []),
-      FILE_ID_PARED: fileIds.paredes?.[0] || '',
-      FILE_ID_EXTERNA: fileIds.externas?.[0] || '',
-      FILE_ID_OTROS: fileIds.otros?.[0] || '',
-      ZIP_FILE: zipId || '',
-      FORM_DATA: form,
-    };
-    return stripEmpty(payload);
+  const remember = (record) => {
+    setInspection(record);
+    setResumeId(record.id);
+    localStorage.setItem('propiedades.inspectionId', record.id);
+    localStorage.setItem('propiedades.operatorId', operatorId.trim());
   };
-
-  const uploadAllPhotos = async () => {
-    const result = { techos: [], pisos: [], paredes: [], externas: [], otros: [] };
-    for (const kind of Object.keys(photos)) {
-      for (const photo of photos[kind] || []) {
-        const res = await uploadFile({ kind, name: photo.name, dataUrl: photo.dataUrl });
-        if (res?.fileId) result[kind].push(res.fileId);
-      }
-    }
-    return result;
-  };
-
-  const createZipAndUpload = async () => {
-    const zip = new JSZip();
-    let count = 0;
-    Object.entries(photos).forEach(([kind, list]) => {
-      (list || []).forEach((photo, idx) => {
-        const base64 = (photo.dataUrl || '').split(',')[1] || '';
-        zip.file(`${kind}/${photo.name || `${kind}-${idx + 1}.jpg`}`, base64, { base64: true });
-        count += 1;
-      });
-    });
-    if (!count) return null;
-    const base64Zip = await zip.generateAsync({ type: 'base64' });
-    const datePart = form.fechaInspeccion || new Date().toISOString().slice(0, 10);
-    const riesgo = (form.nombreRiesgo || form.propietario || 'riesgo').replace(/\s+/g, '_');
-    const name = `${riesgo}-${datePart}.zip`;
-    const res = await uploadFile({
-      kind: 'zip',
-      name,
-      dataUrl: `data:application/zip;base64,${base64Zip}`,
-    });
-    return res?.fileId || null;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const refreshDrafts = async (more = false) => {
+    if (!operatorId.trim()) { setStatus('Indica el operador de pruebas.'); return; }
     setSubmitting(true);
-    setStatus('Subiendo fotos...');
     try {
-      const fileIds = hasFotos ? await uploadAllPhotos() : { techos: [], pisos: [], paredes: [] };
-      let zipId = null;
-      if (hasFotos) {
-        setStatus('Generando .zip de fotos...');
-        zipId = await createZipAndUpload();
-      }
-      setStatus('Enviando formulario...');
-      const payload = buildPayload(fileIds, zipId);
-      const res = await submitInspection(payload);
-      if (res.ok) {
-        setStatus('Enviado (mock/local): ' + (res.data?.message || 'OK'));
-      } else {
-        setStatus('No se pudo enviar: ' + (res.error || 'Error desconocido'));
-      }
-    } catch (err) {
-      console.error(err);
-      setStatus('Error: ' + err.message);
-    } finally {
-      setSubmitting(false);
-    }
+      const result = await listInspections(operatorId.trim(), more ? nextOffset : 0);
+      setDrafts((prev) => more ? [...prev, ...result.inspections] : result.inspections);
+      setNextOffset(result.nextOffset);
+      setDraftsListed(true);
+    } catch (error) { setStatus(error.message); }
+    finally { setSubmitting(false); }
   };
+  const resume = async (id = resumeId) => {
+    if (!id.trim() || !operatorId.trim()) { setStatus('Indica el operador y el ID del borrador.'); return; }
+    if (dirtySections.size && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos y abrir el borrador?')) return;
+    setSubmitting(true);
+    try {
+      const result = await getInspection(id.trim(), operatorId.trim());
+      remember(result);
+      setForm(restoreForm(result.form));
+      setPhotos(result.photos);
+      setDirtySections(new Set());
+      setStatus('Borrador recuperado.');
+    } catch (error) { setStatus(error.message); }
+    finally { setSubmitting(false); }
+  };
+  const newInspection = () => {
+    if (dirtySections.size && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos e iniciar otra inspección?')) return;
+    Object.keys(streamsRef.current).forEach(stopCamera);
+    setInspection(null);
+    setForm({ ...initialForm });
+    setPhotos(emptyPhotos());
+    setDirtySections(new Set());
+    setResumeId('');
+    localStorage.removeItem('propiedades.inspectionId');
+    setStatus('Nueva inspección. Se creará un ID al guardar.');
+  };
+  const persist = async (sectionId) => {
+    if (!operatorId.trim()) { setStatus('Indica el operador de pruebas.'); return; }
+    setSubmitting(true);
+    setStatus('Guardando avance...');
+    try {
+      let current = inspection;
+      if (!current) {
+        current = await createInspection(operatorId.trim());
+        remember(current);
+      }
+      const fields = sectionId
+        ? Object.fromEntries(Object.keys(sectionFields[sectionId].fields).map((key) => [key, form[key]]))
+        : form;
+      const body = { expectedVersion: current.version, fields };
+      if (!sectionId || sectionId === '14') body.photos = Object.fromEntries(Object.entries(photos).map(([kind, items]) => [
+        kind, items.map((photo) => photo.id ? { id: photo.id } : { name: photo.name, dataUrl: photo.dataUrl })
+      ]));
+      const result = await saveInspection(current.id, operatorId.trim(), body, sectionId);
+      remember(result);
+      if (!sectionId) setForm(restoreForm(result.form));
+      if (!sectionId || sectionId === '14') setPhotos(result.photos);
+      setDirtySections((prev) => sectionId ? new Set([...prev].filter((id) => id !== sectionId)) : new Set());
+      setStatus(result.ready
+        ? 'Guardado. Las 15 secciones están completas. El envío a DANA se habilitará en la siguiente etapa.'
+        : `Avance guardado. ${result.completedSections} de 15 secciones completas.`);
+    } catch (error) {
+      setStatus(error.status === 409 ? `${error.message} Tus cambios siguen en pantalla.` : error.message);
+    } finally { setSubmitting(false); }
+  };
+  const handleSubmit = (event) => { event.preventDefault(); persist(); };
 
   return (
     <main className="legacy-background text-slate-900">
       <div className="legacy-page">
         <header className="legacy-header">
-          <div className="legacy-logo">SC</div>
+          <div className="legacy-logo">
+            <img src="/seguros-crecer.png" alt="Seguros Crecer" />
+          </div>
           <div>
-            <h1 className="m-0 text-xl font-bold">Inspección de Riesgos – Seguros Crecer 2.0</h1>
+            <h1 className="m-0 text-xl font-bold">Inspección de Riesgos</h1>
             <p className="m-0 text-sm opacity-90">Captura la información clave, toma fotografías con la cámara y envía.</p>
           </div>
         </header>
 
         <div className="p-4 md:p-6 space-y-4">
-          <Card className="shadow-tremor-card">
-            <Flex justifyContent="between" alignItems="center">
+          <Card className="service-status-card">
+            <div className="service-status-copy">
+              <div className={`service-status-indicator ${pingError ? 'is-error' : pingResult ? 'is-online' : 'is-checking'}`} aria-hidden="true" />
               <div>
-                <Text>Estado del backend</Text>
-                <Title>{pingResult?.message || 'Sin consultar'}</Title>
+                <Text className="service-status-label">Servicio de inspecciones</Text>
+                <Title className="service-status-title">
+                  {pingLoading && !pingResult && !pingError ? 'Conectando…' : pingError ? 'Servicio no disponible' : pingResult ? 'Listo para guardar' : 'Conectando…'}
+                </Title>
+                {pingError && <Text className="service-status-help">No se pudo conectar. Comprueba tu conexión o inténtalo de nuevo más tarde.</Text>}
               </div>
-              <Badge color={pingError ? 'rose' : pingResult ? 'emerald' : 'gray'}>
-                {pingError ? 'Mock/error' : pingResult ? 'OK' : 'Pendiente'}
-              </Badge>
-            </Flex>
-            {pingResult && (
-              <Text className="mt-2">
-                timestamp: {pingResult.timestamp} | requestId: {pingResult.requestId} | source:{' '}
-                {pingResult.source || 'api/mock'}
-              </Text>
-            )}
-            {pingError && <Text className="text-rose-600 mt-2">{pingError}</Text>}
-            <Button className="mt-4" onClick={runPing} loading={pingLoading} color="emerald">
-              Probar /ping
-            </Button>
+            </div>
+            <Badge color={pingError ? 'rose' : pingResult ? 'emerald' : 'gray'}>
+              {pingError ? 'Sin conexión' : pingResult ? 'Conectado' : 'Verificando'}
+            </Badge>
           </Card>
 
+          <Card className="drafts-card">
+            <div className="drafts-header">
+              <div>
+                <Title>Borradores de inspección</Title>
+                <Text>Continúa una inspección guardada o comienza una nueva.</Text>
+              </div>
+              {inspection && <Badge color="emerald">{inspection.completedSections}/15 secciones completas</Badge>}
+            </div>
+            <div className="drafts-controls">
+              <Field label="Operador">
+                <TextInput value={operatorId} disabled aria-readonly="true" />
+              </Field>
+              <Field label="ID del borrador para retomar">
+                <TextInput value={resumeId} disabled={submitting} placeholder="Pega aquí el ID del borrador"
+                  onChange={(e) => setResumeId(e.target.value)} />
+              </Field>
+            </div>
+            {inspection && <Text className="draft-current-id">Inspección actual: <span>{inspection.id}</span></Text>}
+            {inspection?.dana && <Text className="text-amber-700">Estado de DANA: {inspection.dana.estado}. Este formulario está cerrado para edición.</Text>}
+            <div className="draft-actions">
+              <Button className="draft-action-button draft-action-primary" onClick={() => resume()} disabled={submitting}>Retomar borrador</Button>
+              <Button className="draft-action-button draft-action-secondary" onClick={() => refreshDrafts()} disabled={submitting}>Ver mis borradores</Button>
+              <Button className="draft-action-button draft-action-new" onClick={newInspection} disabled={submitting}>Nueva inspección</Button>
+            </div>
+            {draftsListed && drafts.length === 0 && <Text className="draft-empty-state">No hay borradores para este operador todavía.</Text>}
+            {drafts.length > 0 && <div className="draft-list">
+              {drafts.map((draft) => <div key={draft.id} className="draft-list-item">
+                <div className="draft-list-copy">
+                  <Text className="draft-list-name">{draft.nombre}</Text>
+                  <Text>{draft.secciones_completas}/15 secciones completas{draft.dana_status ? ` · DANA: ${draft.dana_status}` : ''}</Text>
+                  <Text className="draft-list-id">{draft.id}</Text>
+                </div>
+                <Button className="draft-action-button draft-action-primary" disabled={submitting} onClick={() => resume(draft.id)}>Abrir</Button>
+              </div>)}
+            </div>}
+            {nextOffset != null && <Button className="draft-action-button draft-action-secondary draft-more-button" disabled={submitting} onClick={() => refreshDrafts(true)}>Ver más borradores</Button>}
+          </Card>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {sections.map((s) => (
-              <div key={s.id} className="legacy-section-card">
-                <h2 className="legacy-section-title">{sectionTitle(s.id, s.title)}</h2>
-                <div className="legacy-section-body">
+            <fieldset disabled={submitting || Boolean(inspection?.dana)} className="space-y-4">
+            {sections.map((s) => {
+              const isDirty = dirtySections.has(s.id);
+              const isComplete = inspection?.sections?.find((item) => String(item.seccion_id) === s.id)?.estado === 'completa';
+              const state = isDirty ? 'dirty' : isComplete ? 'complete' : 'pending';
+              const label = isDirty ? 'Cambios sin guardar' : isComplete ? 'Completa' : 'Pendiente';
+              return (
+              <div key={s.id} className={`legacy-section-card${expandedSections.has(s.id) ? ' is-expanded' : ''}`}>
+                <h2 className="legacy-section-title">
+                  <button
+                    type="button"
+                    className="legacy-section-toggle"
+                    aria-expanded={expandedSections.has(s.id)}
+                    aria-controls={`inspection-section-${s.id}`}
+                    onClick={() => toggleSection(s.id)}
+                  >
+                    <span>{sectionTitle(s.id, s.title)}</span>
+                    <span className="legacy-section-chevron" aria-hidden="true">{expandedSections.has(s.id) ? '−' : '+'}</span>
+                  </button>
+                </h2>
+                <div className="flex items-center justify-between gap-2 px-4 py-2">
+                  <span className={`section-status section-status-${state}`}>
+                    <span className="section-status-icon" aria-hidden="true">{isDirty ? '!' : isComplete ? '✓' : '○'}</span>
+                    {label}
+                  </span>
+                  <button type="button" className="action-btn action-btn-secondary" onClick={() => persist(s.id)}>Guardar sección</button>
+                </div>
+                <div id={`inspection-section-${s.id}`} className="legacy-section-body" hidden={!expandedSections.has(s.id)}>
                   {s.id === '1' && (
                     <div className="legacy-grid-2">
                       <Field label="Nombre del Riesgo" className="legacy-field">
@@ -860,30 +933,9 @@ export default function Home() {
                         <TextInput value={form.mtsConstruccion} onChange={(e) => updateField('mtsConstruccion', e.target.value)} />
                       </Field>
                       <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className="inline-flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={form.disenoAntisismico}
-                            onChange={(e) => updateField('disenoAntisismico', e.target.checked)}
-                          />
-                          Diseño Antisísmico
-                        </label>
-                        <label className="inline-flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={form.construccionUnica}
-                            onChange={(e) => updateField('construccionUnica', e.target.checked)}
-                          />
-                          Construcción Única
-                        </label>
-                        <label className="inline-flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={form.construccionSeparada}
-                            onChange={(e) => updateField('construccionSeparada', e.target.checked)}
-                          />
-                          Construcción Separada
-                        </label>
+                        <BooleanAnswer label="Diseño Antisísmico" value={form.disenoAntisismico} onChange={(value) => updateField('disenoAntisismico', value)} />
+                        <BooleanAnswer label="Construcción Única" value={form.construccionUnica} onChange={(value) => updateField('construccionUnica', value)} />
+                        <BooleanAnswer label="Construcción Separada" value={form.construccionSeparada} onChange={(value) => updateField('construccionSeparada', value)} />
                       </div>
                       <Field label="Predio (Arrendado / Propio)" className="legacy-field">
                         <TextInput value={form.predio} onChange={(e) => updateField('predio', e.target.value)} />
@@ -946,23 +998,9 @@ export default function Home() {
                           />
                         </Field>
                       </div>
-                      <label className="inline-flex items-center gap-2 text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={form.colindanciasNoAgravan}
-                          onChange={(e) => updateField('colindanciasNoAgravan', e.target.checked)}
-                        />
-                        Las colindancias no agravan el riesgo
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-slate-700 mt-2">
-                        <input
-                          type="checkbox"
-                          checked={form.colindanciasAgravan}
-                          onChange={(e) => updateField('colindanciasAgravan', e.target.checked)}
-                        />
-                        Las colindancias agravan el riesgo
-                      </label>
-                      {form.colindanciasAgravan && (
+                      <BooleanAnswer label="Las colindancias no agravan el riesgo" value={form.colindanciasNoAgravan} onChange={(value) => updateField('colindanciasNoAgravan', value)} />
+                      <BooleanAnswer label="Las colindancias agravan el riesgo" value={form.colindanciasAgravan} onChange={(value) => updateField('colindanciasAgravan', value)} />
+                      {(
                         <Field label="Observaciones (colindancias)" className="legacy-field">
                           <Textarea
                             value={form.colindanciasObservaciones}
@@ -1348,7 +1386,8 @@ export default function Home() {
                             <div className="grid grid-cols-2 gap-2">
                               {(photos[kind] || []).map((photo, idx) => (
                                 <div key={`${kind}-${idx}`} className="relative border rounded-lg overflow-hidden bg-white">
-                                  <img src={photo.dataUrl} alt={photo.name} className="w-full h-24 object-cover" />
+                                  {photo.dataUrl || photo.url ? <img src={photo.dataUrl || photo.url} alt={photo.name} className="w-full h-24 object-cover" />
+                                    : <Text className="p-3">Fotografía guardada en DANA</Text>}
                                   <button
                                     type="button"
                                     className="absolute top-1 right-1 bg-rose-600 text-white text-xs px-2 py-1 rounded"
@@ -1376,28 +1415,20 @@ export default function Home() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             <div className="legacy-section-card p-4">
               <div className="legacy-actions">
-                <button
-                  type="reset"
-                  className="action-btn action-btn-secondary"
-                  onClick={() => {
-                    setForm(initialForm);
-                    setPhotos({ techos: [], pisos: [], paredes: [], externas: [], otros: [] });
-                    setStatus('');
-                  }}
-                >
-                  Limpiar
-                </button>
+                <button type="button" className="action-btn action-btn-secondary" onClick={newInspection}>Nueva inspección</button>
                 <button type="submit" className="action-btn action-btn-primary" disabled={submitting}>
-                  {submitting ? 'Enviando...' : 'Guardar / Enviar'}
+                  {submitting ? 'Guardando...' : 'Guardar avance'}
                 </button>
               </div>
-              {status && <Text className="mt-3">{status}</Text>}
             </div>
+            </fieldset>
           </form>
+          {status && <Text role="status" aria-live="polite" className="mt-3">{status}</Text>}
         </div>
       </div>
     </main>

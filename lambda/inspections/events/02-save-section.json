@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "rawPath": "/api/inspections/00000000-0000-0000-0000-000000000000/sections/1",
+  "requestContext": {
+    "http": {
+      "method": "PATCH"
+    }
+  },
+  "headers": {
+    "x-operator-id": "operador-prueba"
+  },
+  "body": "{\"expectedVersion\": 0, \"fields\": {\"nombreRiesgo\": \"Prueba de parcial\", \"propietario\": \"Cliente de prueba\"}}",
+  "isBase64Encoded": false
+}

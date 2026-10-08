@@ -12,3 +12,7 @@ pnpm-debug.log*
 
 # OS
 .DS_Store
+
+# Python Lambda
+__pycache__/
+*.pyc

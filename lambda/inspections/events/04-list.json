@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "rawPath": "/api/inspections",
+  "requestContext": {
+    "http": {
+      "method": "GET"
+    }
+  },
+  "headers": {
+    "x-operator-id": "operador-prueba"
+  },
+  "body": "{}",
+  "isBase64Encoded": false
+}

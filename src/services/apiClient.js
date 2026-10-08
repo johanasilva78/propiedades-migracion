@@ -1,57 +1,37 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const PING_URL = `${API_URL}/ping`;
-const DATA_URL = `${API_URL}/api/dana/start`;
-const UPLOAD_URL = `${API_URL}/api/dana/file-upload`;
+const API_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+async function request(path, { operatorId, method = 'GET', body } = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(operatorId ? { 'X-Operator-Id': operatorId } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data) {
+    const error = new Error(data?.error || `No se pudo completar la solicitud (HTTP ${res.status}).`);
+    error.status = res.status;
+    error.invalidFields = data?.invalidFields || [];
+    throw error;
+  }
+  return data;
+}
 
 export async function ping() {
   try {
-    const res = await fetch(PING_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return { data, error: null, from: 'api' };
+    return { data: await request('/ping'), error: null, from: 'api' };
   } catch (error) {
-    return {
-      data: {
-        message: 'pong (mock)',
-        timestamp: new Date().toISOString(),
-        requestId: 'mock-request-id',
-        source: 'mock',
-      },
-      error: null,
-      from: 'mock',
-    };
+    return { data: null, error: error.message, from: 'api' };
   }
 }
 
-export async function uploadFile({ kind, dataUrl, name }) {
-  try {
-    const res = await fetch(UPLOAD_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, dataUrl, name }),
-    });
-    if (res.ok) {
-      const json = await res.json().catch(() => ({}));
-      return { fileId: json.fileId || json.id || json.url || null, source: 'api' };
-    }
-    throw new Error(`HTTP ${res.status}`);
-  } catch (_) {
-    const fallbackId = `s3://mock/${kind}/${Date.now()}-${name || 'file'}`;
-    return { fileId: fallbackId, source: 'mock' };
-  }
-}
-
-export async function submitInspection(payload) {
-  try {
-    const res = await fetch(DATA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json().catch(() => ({}));
-    return { ok: true, data, from: 'api' };
-  } catch (error) {
-    return { ok: true, data: { message: 'submitted (mock)', payload }, from: 'mock', error: error.message };
-  }
-}
+export const createInspection = (operatorId) => request('/api/inspections', { operatorId, method: 'POST', body: {} });
+export const listInspections = (operatorId, offset = 0) => request(`/api/inspections?offset=${offset}`, { operatorId });
+export const getInspection = (id, operatorId) => request(`/api/inspections/${encodeURIComponent(id)}`, { operatorId });
+export const saveInspection = (id, operatorId, body, sectionId) => request(
+  `/api/inspections/${encodeURIComponent(id)}${sectionId ? `/sections/${sectionId}` : ''}`,
+  { operatorId, method: 'PATCH', body }
+);

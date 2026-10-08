@@ -1,0 +1,231 @@
+{
+  "1": {
+    "title": "Datos del cliente",
+    "table": "datos_cliente",
+    "fields": {
+      "nombreRiesgo": "nombre_riesgo",
+      "propietario": "propietario",
+      "rnc": "rnc",
+      "poliza": "poliza",
+      "tipoRiesgo": "tipo_riesgo",
+      "ubicacionInspeccionada": "ubicacion_inspeccionada",
+      "intermediario": "intermediario",
+      "entrevistado": "entrevistado",
+      "telefono": "telefono",
+      "celular": "celular",
+      "email": "email",
+      "sitioWeb": "sitio_web",
+      "edadRiesgo": "edad_riesgo",
+      "movimientoComercial": "movimiento_comercial",
+      "orgContable": "org_contable",
+      "entidadPublica": "entidad_publica",
+      "techoConstruccion": "techo_construccion",
+      "paredesConstruccion": "paredes_construccion",
+      "niveles": "niveles",
+      "empleados": "empleados",
+      "horario": "horario",
+      "aseguradoraAnterior": "aseguradora_anterior",
+      "inspeccionadoPor": "inspeccionado_por",
+      "fechaInspeccion": "fecha_inspeccion",
+      "zip": "zip",
+      "tipoConstruccion": "tipo_construccion",
+      "tipoConstruccionResultado": "tipo_construccion_resultado"
+    }
+  },
+  "2": {
+    "title": "Sumas aseguradas",
+    "table": "sumas_aseguradas",
+    "fields": {
+      "edificacionRD": "edificacion_rd",
+      "edificacionUSD": "edificacion_usd",
+      "mobiliarioRD": "mobiliario_rd",
+      "mobiliarioUSD": "mobiliario_usd",
+      "maquinariaRD": "maquinaria_rd",
+      "maquinariaUSD": "maquinaria_usd",
+      "existenciaRD": "existencia_rd",
+      "existenciaUSD": "existencia_usd",
+      "bienesEspecificosRD": "bienes_especificos_rd",
+      "bienesEspecificosUSD": "bienes_especificos_usd",
+      "bienesEspecificosDetalle": "bienes_especificos_detalle",
+      "otrosBienesDetalle": "otros_bienes_detalle",
+      "otrosBienesRD": "otros_bienes_rd",
+      "otrosBienesUSD": "otros_bienes_usd",
+      "valorTotalRD": "valor_total_rd",
+      "valorTotalUSD": "valor_total_usd"
+    }
+  },
+  "3": {
+    "title": "Descripción del edificio",
+    "table": "descripcion_edificio",
+    "fields": {
+      "descripcionGeneral": "descripcion_general",
+      "descripcionPorNiveles": "descripcion_por_niveles",
+      "observacionesEdificio": "observaciones_edificio",
+      "anioConstruccion": "anio_construccion",
+      "fechaUltimaRemodelacion": "fecha_ultima_remodelacion",
+      "pisos": "pisos",
+      "mtsPorPiso": "mts_por_piso",
+      "aptosPorPiso": "aptos_por_piso",
+      "mtsConstruccion": "mts_construccion",
+      "disenoAntisismico": "diseno_antisismico",
+      "construccionUnica": "construccion_unica",
+      "construccionSeparada": "construccion_separada",
+      "predio": "predio",
+      "sindicato": "sindicato",
+      "descripcionPorNivel": "descripcion_por_nivel"
+    }
+  },
+  "4": {
+    "title": "Colindancias",
+    "table": "colindancias",
+    "fields": {
+      "colindanciaNorte": "colindancia_norte",
+      "distanciaColindanciaNorte": "distancia_colindancia_norte",
+      "colindanciaSur": "colindancia_sur",
+      "distanciaColindanciaSur": "distancia_colindancia_sur",
+      "colindanciaEste": "colindancia_este",
+      "distanciaColindanciaEste": "distancia_colindancia_este",
+      "colindanciaOeste": "colindancia_oeste",
+      "distanciaColindanciaOeste": "distancia_colindancia_oeste",
+      "colindanciasNoAgravan": "colindancias_no_agravan",
+      "colindanciasAgravan": "colindancias_agravan",
+      "colindanciasObservaciones": "colindancias_observaciones"
+    }
+  },
+  "5": {
+    "title": "Localización del riesgo",
+    "table": "localizacion_riesgo",
+    "fields": {
+      "calle": "calle",
+      "sector": "sector",
+      "municipio": "municipio",
+      "provincia": "provincia",
+      "manzana": "manzana",
+      "edificio": "edificio",
+      "piso": "piso",
+      "apartamento": "apartamento",
+      "residencial": "residencial",
+      "longitud": "longitud",
+      "latitud": "latitud",
+      "nivelMar": "nivel_mar",
+      "distanciaAgua": "distancia_agua",
+      "imagenRiesgo": "imagen_riesgo"
+    }
+  },
+  "6": {
+    "title": "Historial de pérdidas",
+    "table": "historial_perdidas",
+    "fields": {
+      "historialPerdidas": "historial_perdidas"
+    }
+  },
+  "7": {
+    "title": "Siniestralidad de la zona",
+    "table": "siniestralidad_zona",
+    "fields": {
+      "siniestralidad": "siniestralidad",
+      "siniestralidadNotas": "siniestralidad_notas"
+    }
+  },
+  "8": {
+    "title": "Procesos de la empresa",
+    "table": "procesos_empresa",
+    "fields": {
+      "descripcionProcesos": "descripcion_procesos",
+      "manejoInventario": "manejo_inventario"
+    }
+  },
+  "9": {
+    "title": "Descripción de peligros",
+    "table": "descripcion_peligros",
+    "fields": {
+      "combustibles": "combustibles",
+      "cargaCombustible": "carga_combustible",
+      "instalacionesElectricas": "instalaciones_electricas",
+      "ordenLimpieza": "orden_limpieza",
+      "dentroRiesgo": "dentro_riesgo",
+      "fueraRiesgo": "fuera_riesgo",
+      "pasillosLibres": "pasillos_libres",
+      "procedenciaEnergetica": "procedencia_energetica",
+      "generadores": "generadores",
+      "transformador": "transformador",
+      "subestacion": "subestacion",
+      "puestaTierra": "puesta_tierra",
+      "pararrayos": "pararrayos",
+      "calderas": "calderas",
+      "aireComprimido": "aire_comprimido",
+      "peligrosOtros": "peligros_otros"
+    }
+  },
+  "10": {
+    "title": "Prevención y protección",
+    "table": "prevencion_proteccion",
+    "fields": {
+      "extintoresCantidad": "extintores_cantidad",
+      "agenteExtintor": "agente_extintor",
+      "bombasIncendio": "bombas_incendio",
+      "bombasAgua": "bombas_agua",
+      "suministroAgua": "suministro_agua",
+      "almacenAgua": "almacen_agua",
+      "manguerasIncendio": "mangueras_incendio",
+      "prevencionOtros": "prevencion_otros"
+    }
+  },
+  "11": {
+    "title": "Seguridad",
+    "table": "seguridad",
+    "fields": {
+      "camarasCantidad": "camaras_cantidad",
+      "camarasTipo": "camaras_tipo",
+      "camarasDuracion": "camaras_duracion",
+      "vigilantesCantidad": "vigilantes_cantidad",
+      "vigilantesSubcontratados": "vigilantes_subcontratados",
+      "vigilantesArmas": "vigilantes_armas",
+      "senalizacionRutas": "senalizacion_rutas",
+      "simulacros": "simulacros",
+      "simulacrosPeriodicidad": "simulacros_periodicidad",
+      "simulacrosFechaUltima": "simulacros_fecha_ultima"
+    }
+  },
+  "12": {
+    "title": "Estimación de pérdidas incendio",
+    "table": "estimacion_perdidas",
+    "fields": {
+      "mpl": "mpl",
+      "eml": "eml"
+    }
+  },
+  "13": {
+    "title": "Servicios Auxiliares",
+    "table": "servicios_auxiliares",
+    "fields": {
+      "serviciosAuxCantidad": "servicios_aux_cantidad",
+      "serviciosAuxTipo": "servicios_aux_tipo",
+      "serviciosAuxMarca": "servicios_aux_marca",
+      "serviciosAuxModelo": "servicios_aux_modelo",
+      "serviciosAuxSerie": "servicios_aux_serie",
+      "serviciosAuxAnio": "servicios_aux_anio",
+      "serviciosAuxHoras": "servicios_aux_horas",
+      "serviciosAuxCapacidad": "servicios_aux_capacidad"
+    }
+  },
+  "14": {
+    "title": "Fotografías",
+    "table": "fotografias",
+    "fields": {},
+    "requiredPhotoCategories": [
+      "techos",
+      "pisos",
+      "paredes",
+      "externas",
+      "otros"
+    ]
+  },
+  "15": {
+    "title": "Conclusiones generales del inspector",
+    "table": "conclusiones_inspector",
+    "fields": {
+      "conclusionesInspector": "conclusiones_inspector"
+    }
+  }
+}
