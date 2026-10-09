@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Divider, Text, Textarea, TextInput, Title } from '@tremor/react';
 import { usePing } from '../hooks/usePing';
-import { createInspection, listInspections, getInspection, saveInspection } from '../services/apiClient';
+import { createInspection, listInspections, getInspection, getInspectionPhoto, saveInspection } from '../services/apiClient';
 import sectionFields from '../../database/section-fields.json';
 
 const initialForm = {
@@ -226,6 +226,44 @@ const restoreForm = (saved) => Object.fromEntries(Object.entries(initialForm).ma
   const value = saved?.[key];
   return [key, value == null ? fallback : Array.isArray(fallback) || typeof fallback === 'boolean' || fallback === null ? value : String(value)];
 }));
+
+async function restorePhotoPreviews(inspectionId, groupedPhotos, operatorId) {
+  const photos = Object.fromEntries(Object.entries(groupedPhotos).map(([kind, items]) => [kind, [...items]]));
+  const pending = Object.entries(photos).flatMap(([kind, items]) =>
+    items.map((photo, index) => ({ kind, index, photo })).filter(({ photo }) => photo.id && !photo.dataUrl)
+  );
+  let next = 0;
+  const workers = Array.from({ length: Math.min(4, pending.length) }, async () => {
+    while (next < pending.length) {
+      const { kind, index, photo } = pending[next++];
+      try {
+        const stored = await getInspectionPhoto(inspectionId, photo.id, operatorId);
+        photos[kind][index] = { ...photo, ...stored };
+      } catch (error) {
+        if (error.status !== 410) throw error;
+      }
+    }
+  });
+  await Promise.all(workers);
+  return photos;
+}
+
+function preserveLocalPhotoPreviews(savedPhotos, currentPhotos) {
+  return Object.fromEntries(Object.entries(savedPhotos).map(([kind, items]) => {
+    const previous = currentPhotos[kind] || [];
+    const byId = new Map(previous.filter((photo) => photo.id).map((photo) => [photo.id, photo]));
+    const byName = new Map();
+    previous.filter((photo) => photo.name).forEach((photo) => {
+      const matches = byName.get(photo.name) || [];
+      matches.push(photo);
+      byName.set(photo.name, matches);
+    });
+    return [kind, items.map((photo) => {
+      const match = (photo.id && byId.get(photo.id)) || byName.get(photo.name)?.shift();
+      return match?.dataUrl ? { ...photo, dataUrl: match.dataUrl } : photo;
+    })];
+  }));
+}
 
 function BooleanAnswer({ value, onChange, label }) {
   return <label className="inline-flex items-center gap-2 text-slate-700">
@@ -538,9 +576,10 @@ export default function Home() {
     setSubmitting(true);
     try {
       const result = await getInspection(id.trim(), operatorId.trim());
+      const restoredPhotos = await restorePhotoPreviews(result.id, result.photos, operatorId.trim());
       remember(result);
       setForm(restoreForm(result.form));
-      setPhotos(result.photos);
+      setPhotos(restoredPhotos);
       setDirtySections(new Set());
       setStatus('Borrador recuperado.');
     } catch (error) { setStatus(error.message); }
@@ -577,8 +616,18 @@ export default function Home() {
       const result = await saveInspection(current.id, operatorId.trim(), body, sectionId);
       remember(result);
       if (!sectionId) setForm(restoreForm(result.form));
-      if (!sectionId || sectionId === '14') setPhotos(result.photos);
       setDirtySections((prev) => sectionId ? new Set([...prev].filter((id) => id !== sectionId)) : new Set());
+      if (!sectionId || sectionId === '14') {
+        const photosWithPreviews = preserveLocalPhotoPreviews(result.photos, photos);
+        setPhotos(photosWithPreviews);
+        try {
+          const restoredPhotos = await restorePhotoPreviews(result.id, photosWithPreviews, operatorId.trim());
+          setPhotos(restoredPhotos);
+        } catch (error) {
+          setStatus(`Guardado correctamente; no se pudo recuperar la vista previa desde PostgreSQL: ${error.message}`);
+          return;
+        }
+      }
       setStatus(result.ready
         ? 'Guardado. Las 15 secciones están completas. El envío a DANA se habilitará en la siguiente etapa.'
         : `Avance guardado. ${result.completedSections} de 15 secciones completas.`);
@@ -1387,7 +1436,7 @@ export default function Home() {
                               {(photos[kind] || []).map((photo, idx) => (
                                 <div key={`${kind}-${idx}`} className="relative border rounded-lg overflow-hidden bg-white">
                                   {photo.dataUrl || photo.url ? <img src={photo.dataUrl || photo.url} alt={photo.name} className="w-full h-24 object-cover" />
-                                    : <Text className="p-3">Fotografía guardada en DANA</Text>}
+                                    : <Text className="p-3">Vista previa no disponible</Text>}
                                   <button
                                     type="button"
                                     className="absolute top-1 right-1 bg-rose-600 text-white text-xs px-2 py-1 rounded"

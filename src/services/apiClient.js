@@ -10,13 +10,28 @@ async function request(path, { operatorId, method = 'GET', body } = {}) {
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data) {
-    const error = new Error(data?.error || `No se pudo completar la solicitud (HTTP ${res.status}).`);
+
+  const rawBody = await res.text();
+  let data = null;
+
+  if (rawBody) {
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      data = rawBody.trim() || null;
+    }
+  }
+
+  if (!res.ok) {
+    const message = typeof data === 'string'
+      ? data
+      : data?.error || data?.message || rawBody.trim() || `No se pudo completar la solicitud (HTTP ${res.status}).`;
+    const error = new Error(message);
     error.status = res.status;
-    error.invalidFields = data?.invalidFields || [];
+    error.invalidFields = Array.isArray(data?.invalidFields) ? data.invalidFields : [];
     throw error;
   }
+
   return data;
 }
 
@@ -31,6 +46,10 @@ export async function ping() {
 export const createInspection = (operatorId) => request('/api/inspections', { operatorId, method: 'POST', body: {} });
 export const listInspections = (operatorId, offset = 0) => request(`/api/inspections?offset=${offset}`, { operatorId });
 export const getInspection = (id, operatorId) => request(`/api/inspections/${encodeURIComponent(id)}`, { operatorId });
+export const getInspectionPhoto = (id, photoId, operatorId) => request(
+  `/api/inspections/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}`,
+  { operatorId }
+);
 export const saveInspection = (id, operatorId, body, sectionId) => request(
   `/api/inspections/${encodeURIComponent(id)}${sectionId ? `/sections/${sectionId}` : ''}`,
   { operatorId, method: 'PATCH', body }

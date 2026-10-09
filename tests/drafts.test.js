@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInspection, saveInspection, getInspection, ping } from '../src/services/apiClient.js';
+import { createInspection, saveInspection, getInspection, getInspectionPhoto, ping } from '../src/services/apiClient.js';
 import { createApp } from '../server.js';
 
 test('draft client persists version, identity and section with no DANA requests', async () => {
@@ -14,10 +14,13 @@ test('draft client persists version, identity and section with no DANA requests'
     await createInspection('op-1');
     await saveInspection('draft', 'op-1', { expectedVersion: 1, fields: { nombreRiesgo: 'Riesgo' } }, '1');
     await getInspection('draft', 'op-1');
+    await getInspectionPhoto('draft', 'photo-1', 'op-1');
     assert.equal(requests[0].options.method, 'POST');
     assert.ok(requests[1].url.endsWith('/api/inspections/draft/sections/1'));
     assert.equal(requests[1].options.headers['X-Operator-Id'], 'op-1');
     assert.equal(JSON.parse(requests[1].options.body).expectedVersion, 1);
+    assert.ok(requests[3].url.endsWith('/api/inspections/draft/photos/photo-1'));
+    assert.equal(requests[3].options.headers['X-Operator-Id'], 'op-1');
     assert.ok(requests.every((req) => !req.url.includes('/dana/')));
   } finally { globalThis.fetch = previous; }
 });
@@ -27,6 +30,10 @@ test('HTTP error or offline backend never reports a simulated save', async () =>
   try {
     globalThis.fetch = async () => new Response(JSON.stringify({ error: 'Versión vieja' }), { status: 409 });
     await assert.rejects(saveInspection('draft', 'op', { fields: {} }), (error) => error.status === 409);
+    globalThis.fetch = async () => new Response('Service Unavailable', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+    await assert.rejects(saveInspection('draft', 'op', { fields: {} }), (error) => error.status === 503 && error.message === 'Service Unavailable');
+    globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Service Unavailable' }), { status: 503 });
+    await assert.rejects(saveInspection('draft', 'op', { fields: {} }), (error) => error.status === 503 && error.message === 'Service Unavailable');
     globalThis.fetch = async () => { throw new Error('Offline'); };
     await assert.rejects(createInspection('op'), /Offline/);
     const health = await ping();
