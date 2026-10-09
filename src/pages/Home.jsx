@@ -255,6 +255,24 @@ function ChoiceField({ label, value, onChange, options }) {
   );
 }
 
+function NumericInput({ integer = false, allowNegative = false, min, max, ...props }) {
+  return (
+    <TextInput
+      {...props}
+      type="number"
+      inputMode={integer ? 'numeric' : 'decimal'}
+      min={min ?? (allowNegative ? undefined : 0)}
+      max={max}
+      step={integer ? 1 : 'any'}
+      onKeyDown={(event) => {
+        if (['e', 'E', '+'].includes(event.key) || (!allowNegative && event.key === '-')) {
+          event.preventDefault();
+        }
+      }}
+    />
+  );
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -873,10 +891,10 @@ export default function Home() {
                         )}
                       </Field>
                       <Field label="Cantidad de niveles" className="legacy-field">
-                        <TextInput value={form.niveles} onChange={(e) => updateField('niveles', e.target.value)} />
+                        <NumericInput integer value={form.niveles} onChange={(e) => updateField('niveles', e.target.value)} />
                       </Field>
                       <Field label="No. de empleados" className="legacy-field">
-                        <TextInput value={form.empleados} onChange={(e) => updateField('empleados', e.target.value)} />
+                        <NumericInput integer value={form.empleados} onChange={(e) => updateField('empleados', e.target.value)} />
                       </Field>
                       <Field label="Horario" className="legacy-field">
                         <TextInput value={form.horario} onChange={(e) => updateField('horario', e.target.value)} />
@@ -909,37 +927,37 @@ export default function Home() {
                   {s.id === '2' && (
                     <div className="legacy-grid-2">
                       <Field label="Edificación RD$" className="legacy-field">
-                        <TextInput value={form.edificacionRD} onChange={(e) => updateField('edificacionRD', e.target.value)} />
+                        <NumericInput value={form.edificacionRD} onChange={(e) => updateField('edificacionRD', e.target.value)} />
                       </Field>
                       <Field label="Edificación US$" className="legacy-field">
-                        <TextInput value={form.edificacionUSD} onChange={(e) => updateField('edificacionUSD', e.target.value)} />
+                        <NumericInput value={form.edificacionUSD} onChange={(e) => updateField('edificacionUSD', e.target.value)} />
                       </Field>
                       <Field label="Mobiliario RD$" className="legacy-field">
-                        <TextInput value={form.mobiliarioRD} onChange={(e) => updateField('mobiliarioRD', e.target.value)} />
+                        <NumericInput value={form.mobiliarioRD} onChange={(e) => updateField('mobiliarioRD', e.target.value)} />
                       </Field>
                       <Field label="Mobiliario US$" className="legacy-field">
-                        <TextInput value={form.mobiliarioUSD} onChange={(e) => updateField('mobiliarioUSD', e.target.value)} />
+                        <NumericInput value={form.mobiliarioUSD} onChange={(e) => updateField('mobiliarioUSD', e.target.value)} />
                       </Field>
                       <Field label="Maquinaria y equipos RD$" className="legacy-field">
-                        <TextInput value={form.maquinariaRD} onChange={(e) => updateField('maquinariaRD', e.target.value)} />
+                        <NumericInput value={form.maquinariaRD} onChange={(e) => updateField('maquinariaRD', e.target.value)} />
                       </Field>
                       <Field label="Maquinaria y equipos US$" className="legacy-field">
-                        <TextInput value={form.maquinariaUSD} onChange={(e) => updateField('maquinariaUSD', e.target.value)} />
+                        <NumericInput value={form.maquinariaUSD} onChange={(e) => updateField('maquinariaUSD', e.target.value)} />
                       </Field>
                       <Field label="Existencia RD$" className="legacy-field">
-                        <TextInput value={form.existenciaRD} onChange={(e) => updateField('existenciaRD', e.target.value)} />
+                        <NumericInput value={form.existenciaRD} onChange={(e) => updateField('existenciaRD', e.target.value)} />
                       </Field>
                       <Field label="Existencia US$" className="legacy-field">
-                        <TextInput value={form.existenciaUSD} onChange={(e) => updateField('existenciaUSD', e.target.value)} />
+                        <NumericInput value={form.existenciaUSD} onChange={(e) => updateField('existenciaUSD', e.target.value)} />
                       </Field>
                       <Field label="Bienes específicos RD$" className="legacy-field">
-                        <TextInput
+                        <NumericInput
                           value={form.bienesEspecificosRD}
                           onChange={(e) => updateField('bienesEspecificosRD', e.target.value)}
                         />
                       </Field>
                       <Field label="Bienes específicos US$" className="legacy-field">
-                        <TextInput
+                        <NumericInput
                           value={form.bienesEspecificosUSD}
                           onChange={(e) => updateField('bienesEspecificosUSD', e.target.value)}
                         />
@@ -957,16 +975,16 @@ export default function Home() {
                         />
                       </Field>
                       <Field label="Otros bienes RD$" className="legacy-field">
-                        <TextInput value={form.otrosBienesRD} onChange={(e) => updateField('otrosBienesRD', e.target.value)} />
+                        <NumericInput value={form.otrosBienesRD} onChange={(e) => updateField('otrosBienesRD', e.target.value)} />
                       </Field>
                       <Field label="Otros bienes US$" className="legacy-field">
-                        <TextInput value={form.otrosBienesUSD} onChange={(e) => updateField('otrosBienesUSD', e.target.value)} />
+                        <NumericInput value={form.otrosBienesUSD} onChange={(e) => updateField('otrosBienesUSD', e.target.value)} />
                       </Field>
                       <Field label="Valor total a asegurar RD$" className="legacy-field">
-                        <TextInput value={form.valorTotalRD} onChange={(e) => updateField('valorTotalRD', e.target.value)} />
+                        <NumericInput value={form.valorTotalRD} onChange={(e) => updateField('valorTotalRD', e.target.value)} />
                       </Field>
                       <Field label="Valor total a asegurar US$" className="legacy-field">
-                        <TextInput value={form.valorTotalUSD} onChange={(e) => updateField('valorTotalUSD', e.target.value)} />
+                        <NumericInput value={form.valorTotalUSD} onChange={(e) => updateField('valorTotalUSD', e.target.value)} />
                       </Field>
                     </div>
                   )}
@@ -1007,7 +1025,7 @@ export default function Home() {
                         />
                       </Field>
                       <Field label="Año de construcción" className="legacy-field">
-                        <TextInput value={form.anioConstruccion} onChange={(e) => updateField('anioConstruccion', e.target.value)} />
+                        <NumericInput integer value={form.anioConstruccion} onChange={(e) => updateField('anioConstruccion', e.target.value)} />
                       </Field>
                       <Field label="Fecha de última remodelación o modificación" className="legacy-field">
                         <TextInput
@@ -1017,16 +1035,16 @@ export default function Home() {
                         />
                       </Field>
                       <Field label="Cantidad de pisos" className="legacy-field">
-                        <TextInput value={form.pisos} onChange={(e) => updateField('pisos', e.target.value)} />
+                        <NumericInput integer value={form.pisos} onChange={(e) => updateField('pisos', e.target.value)} />
                       </Field>
                       <Field label="Mts² por piso" className="legacy-field">
-                        <TextInput value={form.mtsPorPiso} onChange={(e) => updateField('mtsPorPiso', e.target.value)} />
+                        <NumericInput value={form.mtsPorPiso} onChange={(e) => updateField('mtsPorPiso', e.target.value)} />
                       </Field>
                       <Field label="Aptos/oficinas por piso" className="legacy-field">
-                        <TextInput value={form.aptosPorPiso} onChange={(e) => updateField('aptosPorPiso', e.target.value)} />
+                        <NumericInput integer value={form.aptosPorPiso} onChange={(e) => updateField('aptosPorPiso', e.target.value)} />
                       </Field>
                       <Field label="Mts² de construcción" className="legacy-field">
-                        <TextInput value={form.mtsConstruccion} onChange={(e) => updateField('mtsConstruccion', e.target.value)} />
+                        <NumericInput value={form.mtsConstruccion} onChange={(e) => updateField('mtsConstruccion', e.target.value)} />
                       </Field>
                       <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                         <BooleanAnswer label="Diseño Antisísmico" value={form.disenoAntisismico} onChange={(value) => updateField('disenoAntisismico', value)} />
@@ -1050,7 +1068,7 @@ export default function Home() {
                           />
                         </Field>
                         <Field label="Distancia Norte" className="legacy-field">
-                          <TextInput
+                            <NumericInput
                             value={form.distanciaColindanciaNorte}
                             onChange={(e) => updateField('distanciaColindanciaNorte', e.target.value)}
                           />
@@ -1062,7 +1080,7 @@ export default function Home() {
                           />
                         </Field>
                         <Field label="Distancia Sur" className="legacy-field">
-                          <TextInput
+                            <NumericInput
                             value={form.distanciaColindanciaSur}
                             onChange={(e) => updateField('distanciaColindanciaSur', e.target.value)}
                           />
@@ -1074,7 +1092,7 @@ export default function Home() {
                           />
                         </Field>
                         <Field label="Distancia Este" className="legacy-field">
-                          <TextInput
+                            <NumericInput
                             value={form.distanciaColindanciaEste}
                             onChange={(e) => updateField('distanciaColindanciaEste', e.target.value)}
                           />
@@ -1086,7 +1104,7 @@ export default function Home() {
                           />
                         </Field>
                         <Field label="Distancia Oeste" className="legacy-field">
-                          <TextInput
+                            <NumericInput
                             value={form.distanciaColindanciaOeste}
                             onChange={(e) => updateField('distanciaColindanciaOeste', e.target.value)}
                           />
@@ -1147,16 +1165,18 @@ export default function Home() {
                         <TextInput value={form.residencial} onChange={(e) => updateField('residencial', e.target.value)} />
                       </Field>
                       <Field label="Longitud" className="legacy-field">
-                        <TextInput value={form.longitud} onChange={(e) => updateField('longitud', e.target.value)} />
+                        <NumericInput allowNegative min={-180} max={180} value={form.longitud}
+                          onChange={(e) => updateField('longitud', e.target.value)} />
                       </Field>
                       <Field label="Latitud" className="legacy-field">
-                        <TextInput value={form.latitud} onChange={(e) => updateField('latitud', e.target.value)} />
+                        <NumericInput allowNegative min={-90} max={90} value={form.latitud}
+                          onChange={(e) => updateField('latitud', e.target.value)} />
                       </Field>
                       <Field label="Nivel del mar" className="legacy-field">
-                        <TextInput value={form.nivelMar} onChange={(e) => updateField('nivelMar', e.target.value)} />
+                        <NumericInput value={form.nivelMar} onChange={(e) => updateField('nivelMar', e.target.value)} />
                       </Field>
                       <Field label="Distancia al mar / agua más cercana" className="legacy-field">
-                        <TextInput value={form.distanciaAgua} onChange={(e) => updateField('distanciaAgua', e.target.value)} />
+                        <NumericInput value={form.distanciaAgua} onChange={(e) => updateField('distanciaAgua', e.target.value)} />
                       </Field>
                       <Field label="Imagen del riesgo (según mapa)" className="legacy-field">
                         <div className="space-y-2">
@@ -1280,7 +1300,7 @@ export default function Home() {
                   {s.id === '10' && (
                     <div className="legacy-grid-2">
                       <Field label="Cantidad de extintores" className="legacy-field">
-                        <TextInput
+                        <NumericInput integer
                           value={form.extintoresCantidad}
                           onChange={(e) => updateField('extintoresCantidad', e.target.value)}
                         />
@@ -1327,7 +1347,7 @@ export default function Home() {
                   {s.id === '11' && (
                     <div className="legacy-grid-2">
                       <Field label="Cantidad de cámaras de vigilancia" className="legacy-field">
-                        <TextInput value={form.camarasCantidad} onChange={(e) => updateField('camarasCantidad', e.target.value)} />
+                        <NumericInput integer value={form.camarasCantidad} onChange={(e) => updateField('camarasCantidad', e.target.value)} />
                       </Field>
                       <Field label="Tipo de cámara" className="legacy-field">
                         <TextInput value={form.camarasTipo} onChange={(e) => updateField('camarasTipo', e.target.value)} />
@@ -1336,7 +1356,7 @@ export default function Home() {
                         <TextInput value={form.camarasDuracion} onChange={(e) => updateField('camarasDuracion', e.target.value)} />
                       </Field>
                       <Field label="Cantidad de vigilantes" className="legacy-field">
-                        <TextInput
+                        <NumericInput integer
                           value={form.vigilantesCantidad}
                           onChange={(e) => updateField('vigilantesCantidad', e.target.value)}
                         />
@@ -1384,7 +1404,7 @@ export default function Home() {
                   {s.id === '13' && (
                     <div className="legacy-grid-2">
                       <Field label="Cantidad de maquinarias" className="legacy-field">
-                        <TextInput
+                        <NumericInput integer
                           value={form.serviciosAuxCantidad}
                           onChange={(e) => updateField('serviciosAuxCantidad', e.target.value)}
                         />
@@ -1402,7 +1422,7 @@ export default function Home() {
                         <TextInput value={form.serviciosAuxSerie} onChange={(e) => updateField('serviciosAuxSerie', e.target.value)} />
                       </Field>
                       <Field label="Año" className="legacy-field">
-                        <TextInput value={form.serviciosAuxAnio} onChange={(e) => updateField('serviciosAuxAnio', e.target.value)} />
+                        <NumericInput integer value={form.serviciosAuxAnio} onChange={(e) => updateField('serviciosAuxAnio', e.target.value)} />
                       </Field>
                       <Field label="Horas de operación" className="legacy-field">
                         <TextInput value={form.serviciosAuxHoras} onChange={(e) => updateField('serviciosAuxHoras', e.target.value)} />
