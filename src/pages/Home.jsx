@@ -174,6 +174,37 @@ const constructionOptionsParedes = [
   { value: 'mixto_50_50', label: '50% combustible y 50% incombustible' },
 ];
 
+const fixedChoices = {
+  entidadPublica: [
+    { value: 'Autónoma', label: 'Autónoma' },
+    { value: 'Sector público', label: 'Sector público' },
+  ],
+  predio: [
+    { value: 'Arrendado', label: 'Arrendado' },
+    { value: 'Propio', label: 'Propio' },
+  ],
+  sindicato: [
+    { value: 'Si', label: 'Sí' },
+    { value: 'No', label: 'No' },
+  ],
+  procedenciaEnergetica: [
+    { value: 'Autónoma', label: 'Autónoma' },
+    { value: 'Sector público', label: 'Sector público' },
+  ],
+  vigilantesSubcontratados: [
+    { value: 'Subcontratados', label: 'Subcontratados' },
+    { value: 'Propios', label: 'Propios' },
+  ],
+  vigilantesArmas: [
+    { value: 'Si', label: 'Sí' },
+    { value: 'No', label: 'No' },
+  ],
+  simulacros: [
+    { value: 'Si', label: 'Sí' },
+    { value: 'No', label: 'No' },
+  ],
+};
+
 const constructionMatrix = {
   piedra_ladrillo_concreto: {
     piedra_ladrillo_concreto: 'SUPERIOR',
@@ -205,6 +236,22 @@ function Field({ label, children }) {
       <Text className="font-semibold text-slate-700">{label}</Text>
       {children}
     </div>
+  );
+}
+
+function ChoiceField({ label, value, onChange, options }) {
+  const hasExistingValue = value && !options.some((option) => option.value === value);
+  return (
+    <Field label={label} className="legacy-field">
+      <select className="w-full rounded-md border border-slate-300 bg-white p-2"
+        value={value || ''} onChange={(event) => onChange(event.target.value)}>
+        <option value="">Selecciona una opción</option>
+        {hasExistingValue && <option value={value}>{value}</option>}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </Field>
   );
 }
 
@@ -789,9 +836,8 @@ export default function Home() {
                       <Field label="Organización contable" className="legacy-field">
                         <TextInput value={form.orgContable} onChange={(e) => updateField('orgContable', e.target.value)} />
                       </Field>
-                      <Field label="Es autónoma o del sector público" className="legacy-field">
-                        <TextInput value={form.entidadPublica} onChange={(e) => updateField('entidadPublica', e.target.value)} />
-                      </Field>
+                      <ChoiceField label="Es autónoma o del sector público" value={form.entidadPublica}
+                        onChange={(value) => updateField('entidadPublica', value)} options={fixedChoices.entidadPublica} />
                       <Field label="Tipo de construcción (techo)" className="legacy-field">
                         <select
                           value={form.techoConstruccion}
@@ -987,12 +1033,10 @@ export default function Home() {
                         <BooleanAnswer label="Construcción Única" value={form.construccionUnica} onChange={(value) => updateField('construccionUnica', value)} />
                         <BooleanAnswer label="Construcción Separada" value={form.construccionSeparada} onChange={(value) => updateField('construccionSeparada', value)} />
                       </div>
-                      <Field label="Predio (Arrendado / Propio)" className="legacy-field">
-                        <TextInput value={form.predio} onChange={(e) => updateField('predio', e.target.value)} />
-                      </Field>
-                      <Field label="Sindicato (Sí / No)" className="legacy-field">
-                        <TextInput value={form.sindicato} onChange={(e) => updateField('sindicato', e.target.value)} />
-                      </Field>
+                      <ChoiceField label="Predio (Arrendado / Propio)" value={form.predio}
+                        onChange={(value) => updateField('predio', value)} options={fixedChoices.predio} />
+                      <ChoiceField label="Sindicato (Sí / No)" value={form.sindicato}
+                        onChange={(value) => updateField('sindicato', value)} options={fixedChoices.sindicato} />
                     </div>
                   )}
 
@@ -1203,30 +1247,9 @@ export default function Home() {
                       <Field label="Pasillos libres" className="legacy-field">
                         <Textarea value={form.pasillosLibres} onChange={(e) => updateField('pasillosLibres', e.target.value)} />
                       </Field>
-                      <Field label="Procedencia energética" className="legacy-field">
-                        <div className="flex flex-col gap-2">
-                          <label className="inline-flex items-center gap-2 text-slate-700">
-                            <input
-                              type="radio"
-                              name="procedenciaEnergetica"
-                              value="Autónoma"
-                              checked={form.procedenciaEnergetica === 'Autónoma'}
-                              onChange={(e) => updateField('procedenciaEnergetica', e.target.value)}
-                            />
-                            Autónoma
-                          </label>
-                          <label className="inline-flex items-center gap-2 text-slate-700">
-                            <input
-                              type="radio"
-                              name="procedenciaEnergetica"
-                              value="Sector público"
-                              checked={form.procedenciaEnergetica === 'Sector público'}
-                              onChange={(e) => updateField('procedenciaEnergetica', e.target.value)}
-                            />
-                            Sector público
-                          </label>
-                        </div>
-                      </Field>
+                      <ChoiceField label="Procedencia energética" value={form.procedenciaEnergetica}
+                        onChange={(value) => updateField('procedenciaEnergetica', value)}
+                        options={fixedChoices.procedenciaEnergetica} />
                       <Field label="Generadores eléctricos" className="legacy-field">
                         <Textarea value={form.generadores} onChange={(e) => updateField('generadores', e.target.value)} />
                       </Field>
@@ -1318,24 +1341,19 @@ export default function Home() {
                           onChange={(e) => updateField('vigilantesCantidad', e.target.value)}
                         />
                       </Field>
-                      <Field label="Vigilantes subcontratados o propios" className="legacy-field">
-                        <TextInput
-                          value={form.vigilantesSubcontratados}
-                          onChange={(e) => updateField('vigilantesSubcontratados', e.target.value)}
-                        />
-                      </Field>
-                      <Field label="Poseen armas o no" className="legacy-field">
-                        <TextInput value={form.vigilantesArmas} onChange={(e) => updateField('vigilantesArmas', e.target.value)} />
-                      </Field>
+                      <ChoiceField label="Vigilantes subcontratados o propios" value={form.vigilantesSubcontratados}
+                        onChange={(value) => updateField('vigilantesSubcontratados', value)}
+                        options={fixedChoices.vigilantesSubcontratados} />
+                      <ChoiceField label="Poseen armas o no" value={form.vigilantesArmas}
+                        onChange={(value) => updateField('vigilantesArmas', value)} options={fixedChoices.vigilantesArmas} />
                       <Field label="Señalización y rutas de evacuación" className="legacy-field">
                         <TextInput
                           value={form.senalizacionRutas}
                           onChange={(e) => updateField('senalizacionRutas', e.target.value)}
                         />
                       </Field>
-                      <Field label="Se realizan simulacros" className="legacy-field">
-                        <TextInput value={form.simulacros} onChange={(e) => updateField('simulacros', e.target.value)} />
-                      </Field>
+                      <ChoiceField label="Se realizan simulacros" value={form.simulacros}
+                        onChange={(value) => updateField('simulacros', value)} options={fixedChoices.simulacros} />
                       <Field label="Periodicidad de los simulacros" className="legacy-field">
                         <TextInput
                           value={form.simulacrosPeriodicidad}
