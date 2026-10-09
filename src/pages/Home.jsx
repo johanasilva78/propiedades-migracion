@@ -965,6 +965,7 @@ export default function Home() {
                       </Field>
                       <Field label="Fecha de última remodelación o modificación" className="legacy-field">
                         <TextInput
+                          type="date"
                           value={form.fechaUltimaRemodelacion}
                           onChange={(e) => updateField('fechaUltimaRemodelacion', e.target.value)}
                         />
@@ -1343,6 +1344,7 @@ export default function Home() {
                       </Field>
                       <Field label="Fecha de último simulacro" className="legacy-field">
                         <TextInput
+                          type="date"
                           value={form.simulacrosFechaUltima}
                           onChange={(e) => updateField('simulacrosFechaUltima', e.target.value)}
                         />
