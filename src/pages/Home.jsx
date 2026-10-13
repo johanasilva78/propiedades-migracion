@@ -707,7 +707,7 @@ export default function Home() {
       <div className="legacy-page">
         <header className="legacy-header">
           <div className="legacy-logo">
-            <img src="/seguros-crecer.png" alt="Seguros Crecer" />
+            <img src="/seguros-crecer-blanco.png" alt="Seguros Crecer" />
           </div>
           <div>
             <h1 className="m-0 text-xl font-bold">Inspección de Riesgos</h1>

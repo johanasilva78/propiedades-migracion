@@ -40,8 +40,8 @@ button:focus-visible {
 
 .legacy-header {
   padding: 24px;
-  background: linear-gradient(120deg, var(--afp-meadow-green), var(--afp-ariel-blue));
-  color: var(--afp-abaddon-black);
+  background: var(--afp-abaddon-black);
+  color: #fff;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -50,9 +50,6 @@ button:focus-visible {
 .legacy-logo {
   flex: 0 0 auto;
   width: 220px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #fff;
 }
 
 .legacy-logo img {
