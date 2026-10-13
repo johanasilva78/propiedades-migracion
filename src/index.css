@@ -8,6 +8,7 @@
   --afp-sparkler-yellow: #ffef93;
   --afp-granite-gray: #636466;
   --afp-abaddon-black: #231f20;
+  --afp-header-green: #356b49;
   color: var(--afp-abaddon-black);
   background-color: #fff;
 }
@@ -40,7 +41,7 @@ button:focus-visible {
 
 .legacy-header {
   padding: 24px;
-  background: #356b49;
+  background: var(--afp-header-green);
   color: #fff;
   display: flex;
   align-items: center;
@@ -265,8 +266,8 @@ button:focus-visible {
 
 .legacy-section-title {
   margin: 0;
-  background: var(--afp-meadow-green);
-  color: var(--afp-abaddon-black);
+  background: var(--afp-header-green);
+  color: #fff;
   font-size: 18px;
   letter-spacing: 0.3px;
   font-weight: 700;
@@ -333,14 +334,14 @@ button:focus-visible {
 }
 
 .section-status-complete {
-  border-color: #bbebc5;
-  background: #effaf1;
-  color: #216b35;
+  border-color: var(--afp-header-green);
+  background: var(--afp-header-green);
+  color: #fff;
 }
 
 .section-status-complete .section-status-icon {
-  background: #d5f2dc;
-  color: #216b35;
+  background: var(--afp-header-green);
+  color: #fff;
 }
 
 .section-status-pending {
@@ -436,8 +437,8 @@ button:focus-visible {
   color: var(--afp-abaddon-black);
 }
 .camera-btn-shot {
-  background: var(--afp-meadow-green);
-  color: var(--afp-abaddon-black);
+  background: var(--afp-header-green);
+  color: #fff;
 }
 .camera-btn-stop {
   background: #e11d48;
@@ -464,8 +465,8 @@ button:focus-visible {
   min-width: 140px;
 }
 .action-btn-primary {
-  background: var(--afp-meadow-green);
-  color: var(--afp-abaddon-black);
+  background: var(--afp-header-green);
+  color: #fff;
 }
 .action-btn-secondary {
   background: var(--afp-ariel-blue);
