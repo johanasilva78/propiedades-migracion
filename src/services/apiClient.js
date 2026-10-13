@@ -48,9 +48,10 @@ async function request(path, { operatorId, method = 'GET', body } = {}) {
   return data;
 }
 
-export async function ping() {
+export async function ping(operatorId) {
   try {
-    return { data: await request('/ping'), error: null, from: 'api' };
+    const result = await request('/api/inspections?offset=0', { operatorId });
+    return { data: { message: 'API de inspecciones y PostgreSQL disponibles', ...result }, error: null, from: 'api' };
   } catch (error) {
     return { data: null, error: error.message, from: 'api' };
   }

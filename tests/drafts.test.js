@@ -36,10 +36,26 @@ test('HTTP error or offline backend never reports a simulated save', async () =>
     await assert.rejects(saveInspection('draft', 'op', { fields: {} }), (error) => error.status === 503 && error.message === 'Service Unavailable');
     globalThis.fetch = async () => { throw new Error('Offline'); };
     await assert.rejects(createInspection('op'), /Offline/);
-    const health = await ping();
+    const health = await ping('op');
     assert.equal(health.data, null);
     assert.equal(health.error, 'Offline');
   } finally { globalThis.fetch = previous; }
+});
+
+test('service health checks the authenticated inspection API instead of the CORS-broken ping route', async () => {
+  const previousFetch = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return new Response(JSON.stringify({ inspections: [], nextOffset: null }), { status: 200 });
+  };
+  try {
+    const health = await ping('SUSER');
+    assert.ok(request.url.endsWith('/api/inspections?offset=0'));
+    assert.equal(request.options.headers['X-Operator-Id'], 'SUSER');
+    assert.equal(health.data.message, 'API de inspecciones y PostgreSQL disponibles');
+    assert.equal(health.error, null);
+  } finally { globalThis.fetch = previousFetch; }
 });
 
 async function withServer(app, work) {

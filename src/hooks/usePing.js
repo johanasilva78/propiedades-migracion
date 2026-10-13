@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ping } from '../services/apiClient';
 
-export function usePing() {
+export function usePing(operatorId) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -11,7 +11,7 @@ export function usePing() {
     if (requestRef.current) return requestRef.current;
     setLoading(true);
     setError(null);
-    requestRef.current = ping().then((response) => {
+    requestRef.current = ping(operatorId).then((response) => {
       setResult(response.data);
       setError(response.error);
       return response;
@@ -20,7 +20,7 @@ export function usePing() {
       setLoading(false);
     });
     return requestRef.current;
-  }, []);
+  }, [operatorId]);
 
   useEffect(() => {
     run();

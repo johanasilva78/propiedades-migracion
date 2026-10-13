@@ -341,9 +341,9 @@ function BooleanAnswer({ value, onChange, label }) {
 }
 
 export default function Home({ user, onLogout }) {
-  const { loading: pingLoading, result: pingResult, error: pingError, run: runPing } = usePing();
-  const [form, setForm] = useState(initialForm);
   const operatorId = user.userName;
+  const { loading: pingLoading, result: pingResult, error: pingError } = usePing(operatorId);
+  const [form, setForm] = useState(initialForm);
   const [inspection, setInspection] = useState(null);
   const resumeStorageKey = `propiedades.inspectionId.${operatorId}`;
   const [resumeId, setResumeId] = useState(() => localStorage.getItem(resumeStorageKey) || '');
