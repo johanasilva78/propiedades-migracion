@@ -40,7 +40,7 @@ button:focus-visible {
 
 .legacy-header {
   padding: 24px;
-  background: var(--afp-abaddon-black);
+  background: #356b49;
   color: #fff;
   display: flex;
   align-items: center;
