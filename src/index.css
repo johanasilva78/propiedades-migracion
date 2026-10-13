@@ -3,19 +3,24 @@
 @tailwind utilities;
 
 :root {
-  color: #0f172a;
-  background-color: #f8fafc;
+  --afp-meadow-green: #afdbbd;
+  --afp-ariel-blue: #b1d3ef;
+  --afp-sparkler-yellow: #ffef93;
+  --afp-granite-gray: #636466;
+  --afp-abaddon-black: #231f20;
+  color: var(--afp-abaddon-black);
+  background-color: #fff;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at 10% 20%, #e3f4ff 0, #f7fbff 35%, #eef5ec 100%);
+  background: radial-gradient(circle at 10% 20%, var(--afp-ariel-blue) 0, #fff 48%, var(--afp-meadow-green) 140%);
   min-height: 100vh;
 }
 
 button:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--afp-granite-gray);
   outline-offset: 2px;
 }
 
@@ -28,15 +33,15 @@ button:focus-visible {
   margin: 0 auto 32px;
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 16px 60px rgba(15, 63, 95, 0.12);
+  box-shadow: 0 16px 60px rgba(35, 31, 32, 0.12);
   overflow: hidden;
   border: 1px solid #d8dde4;
 }
 
 .legacy-header {
   padding: 24px;
-  background: linear-gradient(120deg, #2f6f3a, #4d8c58);
-  color: #fff;
+  background: linear-gradient(120deg, var(--afp-meadow-green), var(--afp-ariel-blue));
+  color: var(--afp-abaddon-black);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -61,8 +66,8 @@ button:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border: 1px solid #dce9de;
-  background: linear-gradient(110deg, #f5fbf5, #fff);
+  border: 1px solid var(--afp-meadow-green);
+  background: linear-gradient(110deg, #f5fbf7, #fff);
 }
 
 .service-status-copy {
@@ -177,12 +182,12 @@ button:focus-visible {
 }
 
 .draft-action-primary {
-  background: #2f6f3a !important;
-  color: #fff !important;
+  background: var(--afp-meadow-green) !important;
+  color: var(--afp-abaddon-black) !important;
 }
 
 .draft-action-primary:not(:disabled):hover {
-  background: #255a2e !important;
+  background: #9bcfac !important;
 }
 
 .draft-action-secondary {
@@ -197,13 +202,13 @@ button:focus-visible {
 }
 
 .draft-action-new {
-  border-color: #cfe3d2 !important;
-  background: #edf7ef !important;
-  color: #285f33 !important;
+  border-color: var(--afp-meadow-green) !important;
+  background: #f2faf5 !important;
+  color: var(--afp-abaddon-black) !important;
 }
 
 .draft-action-new:not(:disabled):hover {
-  background: #e0f0e3 !important;
+  background: #e7f5ec !important;
 }
 
 .draft-action-button:disabled {
@@ -263,8 +268,8 @@ button:focus-visible {
 
 .legacy-section-title {
   margin: 0;
-  background: #56955e;
-  color: #0c2408;
+  background: var(--afp-meadow-green);
+  color: var(--afp-abaddon-black);
   font-size: 18px;
   letter-spacing: 0.3px;
   font-weight: 700;
@@ -275,8 +280,8 @@ button:focus-visible {
 }
 
 .legacy-section-card.is-expanded {
-  border-color: #a8c9ac;
-  box-shadow: 0 8px 22px rgba(36, 86, 47, 0.08);
+  border-color: var(--afp-ariel-blue);
+  box-shadow: 0 8px 22px rgba(99, 100, 102, 0.12);
 }
 
 .legacy-section-toggle {
@@ -426,16 +431,16 @@ button:focus-visible {
   white-space: nowrap;
 }
 .camera-btn-start {
-  background: #56955e;
-  color: #fff;
+  background: var(--afp-ariel-blue);
+  color: var(--afp-abaddon-black);
 }
 .camera-btn-switch {
-  background: #2563eb;
-  color: #fff;
+  background: var(--afp-sparkler-yellow);
+  color: var(--afp-abaddon-black);
 }
 .camera-btn-shot {
-  background: #2f6f3a;
-  color: #fff;
+  background: var(--afp-meadow-green);
+  color: var(--afp-abaddon-black);
 }
 .camera-btn-stop {
   background: #e11d48;
@@ -462,12 +467,12 @@ button:focus-visible {
   min-width: 140px;
 }
 .action-btn-primary {
-  background: #2f6f3a;
-  color: #fff;
+  background: var(--afp-meadow-green);
+  color: var(--afp-abaddon-black);
 }
 .action-btn-secondary {
-  background: #e5e7eb;
-  color: #1f2937;
+  background: var(--afp-ariel-blue);
+  color: var(--afp-abaddon-black);
 }
 
 @media (max-width: 720px) {
