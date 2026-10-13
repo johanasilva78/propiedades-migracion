@@ -68,3 +68,11 @@ export const saveInspection = (id, operatorId, body, sectionId) => request(
   `/api/inspections/${encodeURIComponent(id)}${sectionId ? `/sections/${sectionId}` : ''}`,
   { operatorId, method: 'PATCH', body }
 );
+export const retryDanaInspection = (id, operatorId) => request(
+  `/api/inspections/${encodeURIComponent(id)}/dana/retry`,
+  { operatorId, method: 'POST', body: { confirmDuplicateRisk: true } }
+);
+export const unlockInspectionConclusions = (id, operatorId) => request(
+  `/api/inspections/${encodeURIComponent(id)}/dana/unlock-conclusion`,
+  { operatorId, method: 'POST', body: { confirmDuplicateRisk: true } }
+);

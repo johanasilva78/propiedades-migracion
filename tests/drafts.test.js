@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInspection, saveInspection, getInspection, getInspectionPhoto, ping } from '../src/services/apiClient.js';
+import { createInspection, saveInspection, getInspection, getInspectionPhoto, retryDanaInspection, unlockInspectionConclusions, ping } from '../src/services/apiClient.js';
 import { createApp } from '../server.js';
 
 test('draft client persists version, identity and section with no DANA requests', async () => {
@@ -22,6 +22,40 @@ test('draft client persists version, identity and section with no DANA requests'
     assert.ok(requests[3].url.endsWith('/api/inspections/draft/photos/photo-1'));
     assert.equal(requests[3].options.headers['X-Operator-Id'], 'op-1');
     assert.ok(requests.every((req) => !req.url.includes('/dana/')));
+  } finally { globalThis.fetch = previous; }
+});
+
+test('manual DANA retry sends an explicit duplicate-risk confirmation', async () => {
+  const previous = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return new Response(JSON.stringify({ dana: { estado: 'confirmado' } }), { status: 200 });
+  };
+  try {
+    const result = await retryDanaInspection('draft', 'op-1');
+    assert.ok(request.url.endsWith('/api/inspections/draft/dana/retry'));
+    assert.equal(request.options.method, 'POST');
+    assert.equal(request.options.headers['X-Operator-Id'], 'op-1');
+    assert.deepEqual(JSON.parse(request.options.body), { confirmDuplicateRisk: true });
+    assert.equal(result.dana.estado, 'confirmado');
+  } finally { globalThis.fetch = previous; }
+});
+
+test('unlocking conclusions sends explicit duplicate-risk confirmation', async () => {
+  const previous = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return new Response(JSON.stringify({ dana: { editableSection: '15' } }), { status: 200 });
+  };
+  try {
+    const result = await unlockInspectionConclusions('draft', 'op-1');
+    assert.ok(request.url.endsWith('/api/inspections/draft/dana/unlock-conclusion'));
+    assert.equal(request.options.method, 'POST');
+    assert.equal(request.options.headers['X-Operator-Id'], 'op-1');
+    assert.deepEqual(JSON.parse(request.options.body), { confirmDuplicateRisk: true });
+    assert.equal(result.dana.editableSection, '15');
   } finally { globalThis.fetch = previous; }
 });
 

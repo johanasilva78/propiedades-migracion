@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Divider, Text, Textarea, TextInput, Title } from '@tremor/react';
 import { usePing } from '../hooks/usePing';
-import { createInspection, listInspections, getInspection, getInspectionPhoto, saveInspection } from '../services/apiClient';
+import { createInspection, listInspections, getInspection, getInspectionPhoto, saveInspection, unlockInspectionConclusions } from '../services/apiClient';
 import sectionFields from '../../database/section-fields.json';
 
 const initialForm = {
@@ -691,11 +691,35 @@ export default function Home({ user, onLogout }) {
           return;
         }
       }
-      setStatus(result.ready
-        ? 'Guardado. Las 15 secciones están completas. El envío a DANA se habilitará en la siguiente etapa.'
-        : `Avance guardado. ${result.completedSections} de 15 secciones completas.`);
+      if (!result.ready) {
+        setStatus(`Avance guardado. ${result.completedSections} de 15 secciones completas.`);
+      } else if (result.dana?.estado === 'confirmado') {
+        setStatus(`Inspección finalizada y enviada a DANA. ID de conversación: ${result.dana.danaId}.`);
+      } else if (result.dana?.estado === 'incierto') {
+        setStatus('Las 15 secciones se guardaron, pero DANA no confirmó la conversación. Verifica el estado en DANA antes de volver a enviar.');
+      } else if (result.dana?.estado === 'error') {
+        setStatus(`Las 15 secciones se guardaron, pero DANA rechazó el envío: ${result.dana.ultimo_error}`);
+      } else {
+        setStatus(`Las 15 secciones se guardaron. Estado del envío a DANA: ${result.dana?.estado || 'pendiente'}.`);
+      }
     } catch (error) {
       setStatus(error.status === 409 ? `${error.message} Tus cambios siguen en pantalla.` : error.message);
+    } finally { setSubmitting(false); }
+  };
+  const retryDana = async () => {
+    if (!inspection || inspection.dana?.estado !== 'incierto') return;
+    const approved = window.confirm(
+      'Esta acción marcará cancelado el intento incierto y habilitará solo Conclusiones. Al guardar esa sección podría iniciarse una conversación duplicada si DANA sí procesó el intento previo. ¿Deseas continuar?'
+    );
+    if (!approved) return;
+    setSubmitting(true);
+    setStatus('Desbloqueando únicamente la sección Conclusiones...');
+    try {
+      const result = await unlockInspectionConclusions(inspection.id, operatorId.trim());
+      remember(result);
+      setStatus('Conclusiones está desbloqueada. Las otras secciones siguen bloqueadas. Al guardar Conclusiones se iniciará un nuevo envío a DANA.');
+    } catch (error) {
+      setStatus(error.message);
     } finally { setSubmitting(false); }
   };
   const handleSubmit = (event) => { event.preventDefault(); persist(); };
@@ -752,7 +776,12 @@ export default function Home({ user, onLogout }) {
               </Field>
             </div>
             {inspection && <Text className="draft-current-id">Inspección actual: <span>{inspection.id}</span></Text>}
-            {inspection?.dana && <Text className="text-amber-700">Estado de DANA: {inspection.dana.estado}. Este formulario está cerrado para edición.</Text>}
+            {inspection?.dana && inspection.dana.editableSection !== '15' &&
+              <Text className="text-amber-700">Estado de DANA: {inspection.dana.estado}. Este formulario está cerrado para edición.</Text>}
+            {inspection?.dana?.editableSection === '15' &&
+              <Text className="text-amber-700">Solo Conclusiones está desbloqueada. Guardarla generará un nuevo intento de envío a DANA.</Text>}
+            {inspection?.dana?.estado === 'incierto' && <Button className="draft-action-button draft-action-primary"
+              onClick={retryDana} disabled={submitting}>Desbloquear Conclusiones</Button>}
             <div className="draft-actions">
               <Button className="draft-action-button draft-action-primary" onClick={() => resume()} disabled={submitting}>Retomar borrador</Button>
               <Button className="draft-action-button draft-action-secondary" onClick={() => refreshDrafts()} disabled={submitting}>Ver mis borradores</Button>
@@ -772,14 +801,16 @@ export default function Home({ user, onLogout }) {
             {nextOffset != null && <Button className="draft-action-button draft-action-secondary draft-more-button" disabled={submitting} onClick={() => refreshDrafts(true)}>Ver más borradores</Button>}
           </Card>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <fieldset disabled={submitting || Boolean(inspection?.dana)} className="space-y-4">
+            <fieldset disabled={submitting || Boolean(inspection?.dana && inspection.dana.editableSection !== '15')} className="space-y-4">
             {sections.map((s) => {
               const isDirty = dirtySections.has(s.id);
               const isComplete = inspection?.sections?.find((item) => String(item.seccion_id) === s.id)?.estado === 'completa';
               const state = isDirty ? 'dirty' : isComplete ? 'complete' : 'pending';
               const label = isDirty ? 'Cambios sin guardar' : isComplete ? 'Completa' : 'Pendiente';
+              const restrictedToConclusions = inspection?.dana?.editableSection === '15';
               return (
               <div key={s.id} className={`legacy-section-card${expandedSections.has(s.id) ? ' is-expanded' : ''}`}>
+                <fieldset disabled={restrictedToConclusions && s.id !== '15'} className="m-0 min-w-0 border-0 p-0">
                 <h2 className="legacy-section-title">
                   <button
                     type="button"
@@ -1505,6 +1536,7 @@ export default function Home({ user, onLogout }) {
                     </Field>
                   )}
                 </div>
+                </fieldset>
               </div>
               );
             })}
@@ -1512,7 +1544,8 @@ export default function Home({ user, onLogout }) {
             <div className="legacy-section-card p-4">
               <div className="legacy-actions">
                 <button type="button" className="action-btn action-btn-secondary" onClick={newInspection}>Nueva inspección</button>
-                <button type="submit" className="action-btn action-btn-primary" disabled={submitting}>
+                <button type="submit" className="action-btn action-btn-primary"
+                  disabled={submitting || Boolean(inspection?.dana?.editableSection)}>
                   {submitting ? 'Guardando...' : 'Guardar avance'}
                 </button>
               </div>
