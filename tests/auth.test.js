@@ -25,11 +25,37 @@ test('authentication posts credentials and returns the token and user', async ()
   }
 });
 
+test('authentication retries one transient network failure without prompting again', async () => {
+  const previousFetch = globalThis.fetch;
+  let attempts = 0;
+  globalThis.fetch = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new TypeError('Failed to fetch');
+    return new Response(JSON.stringify({
+      message: 'Login exitoso',
+      token: 'jwt-token',
+      value: { userName: 'SUSER' },
+    }), { status: 200 });
+  };
+  try {
+    const session = await authenticate('SUSER', 'password');
+    assert.equal(attempts, 2);
+    assert.equal(session.token, 'jwt-token');
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
 test('authentication rejects API errors and malformed successful responses', async () => {
   const previousFetch = globalThis.fetch;
   try {
-    globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Credenciales inválidas' }), { status: 401 });
+    let attempts = 0;
+    globalThis.fetch = async () => {
+      attempts += 1;
+      return new Response(JSON.stringify({ message: 'Credenciales inválidas' }), { status: 401 });
+    };
     await assert.rejects(authenticate('SUSER', 'wrong'), /Credenciales inválidas/);
+    assert.equal(attempts, 1);
 
     globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Login exitoso' }), { status: 200 });
     await assert.rejects(authenticate('SUSER', 'password'), /sin un token o nombre de usuario válido/);

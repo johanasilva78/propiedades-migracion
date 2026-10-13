@@ -1,14 +1,32 @@
 export const AUTH_SESSION_KEY = 'propiedades.authSession';
 const AUTH_URL = 'https://odiseo.seguroscrecer.com/devauthorizer/api/v1/account/authenticate';
 
+async function requestAuthentication(userName, password) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await fetch(AUTH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userName, password }),
+      });
+    } catch (error) {
+      if (!(error instanceof TypeError) || attempt === 1) {
+        if (error instanceof TypeError) {
+          throw new Error('No se pudo conectar con el servicio de autenticación. Verifica tu conexión e intenta de nuevo.', { cause: error });
+        }
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
+  throw new Error('No se pudo completar la autenticación.');
+}
+
 export async function authenticate(userName, password) {
-  const response = await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ userName, password }),
-  });
+  const response = await requestAuthentication(userName, password);
 
   const rawBody = await response.text();
   let data = null;
