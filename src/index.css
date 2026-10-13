@@ -25,6 +25,98 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+.auth-background {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(100%, 440px);
+  overflow: hidden;
+  border: 1px solid #d8dde4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 60px rgba(35, 31, 32, 0.16);
+}
+
+.auth-header {
+  padding: 28px 24px;
+  background: var(--afp-header-green);
+  color: #fff;
+  text-align: center;
+}
+
+.auth-header img {
+  display: block;
+  width: min(240px, 100%);
+  height: auto;
+  margin: 0 auto 18px;
+}
+
+.auth-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.auth-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 9px;
+  padding: 24px;
+}
+
+.auth-form label {
+  margin-top: 8px;
+  color: #1f2a36;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d8dde4;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.auth-form input:focus {
+  border-color: var(--afp-header-green);
+  outline: 2px solid rgba(53, 107, 73, 0.18);
+}
+
+.auth-error {
+  margin: 8px 0;
+  color: #be123c;
+  font-size: 14px;
+}
+
+.auth-submit {
+  min-height: 46px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--afp-header-green);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .legacy-background {
   padding: 24px;
 }
@@ -57,6 +149,25 @@ button:focus-visible {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.legacy-header-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.legacy-header-account button {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
 }
 
 .service-status-card {
@@ -480,6 +591,10 @@ button:focus-visible {
   .legacy-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .legacy-header-account {
+    margin-left: 0;
+    flex-wrap: wrap;
   }
   .legacy-logo {
     width: min(220px, 100%);

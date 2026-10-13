@@ -340,12 +340,13 @@ function BooleanAnswer({ value, onChange, label }) {
   </label>;
 }
 
-export default function Home() {
+export default function Home({ user, onLogout }) {
   const { loading: pingLoading, result: pingResult, error: pingError, run: runPing } = usePing();
   const [form, setForm] = useState(initialForm);
-  const [operatorId, setOperatorId] = useState(() => localStorage.getItem('propiedades.operatorId') || 'operador-prueba');
+  const operatorId = user.userName;
   const [inspection, setInspection] = useState(null);
-  const [resumeId, setResumeId] = useState(() => localStorage.getItem('propiedades.inspectionId') || '');
+  const resumeStorageKey = `propiedades.inspectionId.${operatorId}`;
+  const [resumeId, setResumeId] = useState(() => localStorage.getItem(resumeStorageKey) || '');
   const [drafts, setDrafts] = useState([]);
   const [nextOffset, setNextOffset] = useState(null);
   const [draftsListed, setDraftsListed] = useState(false);
@@ -621,11 +622,9 @@ export default function Home() {
   const remember = (record) => {
     setInspection(record);
     setResumeId(record.id);
-    localStorage.setItem('propiedades.inspectionId', record.id);
-    localStorage.setItem('propiedades.operatorId', operatorId.trim());
+    localStorage.setItem(resumeStorageKey, record.id);
   };
   const refreshDrafts = async (more = false) => {
-    if (!operatorId.trim()) { setStatus('Indica el operador de pruebas.'); return; }
     setSubmitting(true);
     try {
       const result = await listInspections(operatorId.trim(), more ? nextOffset : 0);
@@ -636,7 +635,7 @@ export default function Home() {
     finally { setSubmitting(false); }
   };
   const resume = async (id = resumeId) => {
-    if (!id.trim() || !operatorId.trim()) { setStatus('Indica el operador y el ID del borrador.'); return; }
+    if (!id.trim()) { setStatus('Indica el ID del borrador.'); return; }
     if (dirtySections.size && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos y abrir el borrador?')) return;
     setSubmitting(true);
     try {
@@ -658,11 +657,10 @@ export default function Home() {
     setPhotos(emptyPhotos());
     setDirtySections(new Set());
     setResumeId('');
-    localStorage.removeItem('propiedades.inspectionId');
+    localStorage.removeItem(resumeStorageKey);
     setStatus('Nueva inspección. Se creará un ID al guardar.');
   };
   const persist = async (sectionId) => {
-    if (!operatorId.trim()) { setStatus('Indica el operador de pruebas.'); return; }
     setSubmitting(true);
     setStatus('Guardando avance...');
     try {
@@ -713,6 +711,10 @@ export default function Home() {
             <h1 className="m-0 text-xl font-bold">Inspección de Riesgos</h1>
             <p className="m-0 text-sm opacity-90">Captura la información clave, toma fotografías con la cámara y envía.</p>
           </div>
+          <div className="legacy-header-account">
+            <span>{user.name || user.userName}</span>
+            <button type="button" onClick={onLogout}>Cerrar sesión</button>
+          </div>
         </header>
 
         <div className="p-4 md:p-6 space-y-4">
@@ -742,7 +744,7 @@ export default function Home() {
             </div>
             <div className="drafts-controls">
               <Field label="Operador">
-                <TextInput value={operatorId} disabled aria-readonly="true" />
+                <TextInput value={user.userName} disabled aria-readonly="true" />
               </Field>
               <Field label="ID del borrador para retomar">
                 <TextInput value={resumeId} disabled={submitting} placeholder="Pega aquí el ID del borrador"

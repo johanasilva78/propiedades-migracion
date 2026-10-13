@@ -1,12 +1,25 @@
 const API_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+const AUTH_SESSION_KEY = 'propiedades.authSession';
 
 async function request(path, { operatorId, method = 'GET', body } = {}) {
+  const authSession = typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(AUTH_SESSION_KEY);
+  let token = '';
+  if (authSession) {
+    try {
+      const storedToken = JSON.parse(authSession).token;
+      token = typeof storedToken === 'string' ? storedToken : '';
+    } catch {
+      throw new Error('La sesión de autenticación no es válida. Cierra sesión e inicia nuevamente.');
+    }
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
       Accept: 'application/json',
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       ...(operatorId ? { 'X-Operator-Id': operatorId } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
